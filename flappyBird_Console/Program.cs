@@ -4,12 +4,33 @@
     {
         static void Main(string[] args)
         {
-            const double Gravity = 0.18;
-            const double JumpHeight = -1.8;
+            while (true)
+            {
+                Game game = new Game();
+                game.Start();
+
+                Console.WriteLine("Would  yhou like to play again? (y/n)");
+                var key = Console.ReadKey().Key;
+
+                if (key != ConsoleKey.Y)
+                {
+                    return;
+                }
+                Console.Clear();
+
+            }
+        }
+    }
+    class Game
+    {
+        public const int X = 15;
+        public double y = 15;
+        const double Gravity = 0.18;
+        const double JumpHeight = -1.8;
+        public void Start()
+        {
 
 
-            const int X = 15;
-            double y = 15;
             double v = 0;
             const double a = -Gravity;
 
@@ -30,9 +51,10 @@
             int pipeCounter = 20;
             while (true)
             {
-                Thread.Sleep(30);
+                Thread.Sleep(25);
                 Delete();
 
+                bool lost = false;
                 if (Console.KeyAvailable)
                 {
                     Console.ReadKey(true);
@@ -42,13 +64,9 @@
                 v += a;
                 y -= v;
 
-                if (y  < 0)
+                if (y >= Console.WindowHeight || y < 0)
                 {
-                    y = 0;
-                }
-                if (y >= Console.WindowHeight)
-                {
-                    y = Console.WindowHeight - 1;
+                    lost = true;
                 }
                 Console.SetCursorPosition(0, 0);
                 Console.Write(Math.Round(v, 3).ToString() + " , " + Math.Round(y, 3).ToString());
@@ -71,12 +89,29 @@
 
                 if (pipeCounter == 60)
                 {
-                    pipes.Add(new Pipe(Console.WindowWidth /2 - 1));
+                    pipes.Add(new Pipe(Console.WindowWidth / 2 - 1, this));
                     pipeCounter = 0;
+                }
+                // check collision
+
+                foreach (Pipe p in pipes)
+                {
+                    if (p.GetCollision())
+                    {
+                        lost = true;
+                        break;
+                    }
+                }
+                if (lost)
+                {
+                    Console.Clear();
+                    Console.WriteLine("You lost!!!");
+                    break;
                 }
                 pipeCounter++;
             }
         }
+
     }
     class Pipe
     {
@@ -89,7 +124,9 @@
         const int GapSize = 14;
         const string Icon = "###";
 
-        public Pipe(int x)
+        Game game;
+
+        public Pipe(int x, Game game)
         {
             this.x = x;
             (int minRange, int maxRange) = GetWindowBorders();
@@ -97,6 +134,7 @@
             gapTop = gapY + GapSize / 2;
             gapBottom = gapY - GapSize / 2;
 
+            this.game = game;
 
         }
         (int, int) GetWindowBorders()
@@ -138,6 +176,14 @@
             Delete();
             x--;
             Print();
+        }
+        public bool GetCollision()
+        {
+            if (x == Game.X && (game.y <= (gapBottom + 1) || game.y >= (gapTop - 1)))
+            {
+                return true;
+            }
+            return false;
         }
     }
 }
