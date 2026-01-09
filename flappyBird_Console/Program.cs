@@ -6,11 +6,26 @@
         {
             while (true)
             {
-                Game game = new Game();
+                bool jumpMode = true;
+                Console.WriteLine("Would  you like to play in jump or swing mode? (j for jump/s (or anything else) for swing)");
+                var key = Console.ReadKey().Key;
+
+                if (key != ConsoleKey.J)
+                {
+                    jumpMode = false;
+                }
+                else
+                {
+                    jumpMode = true;
+                }
+                Console.Clear();
+
+                Game game = new Game(jumpMode);
                 game.Start();
 
-                Console.WriteLine("Would  yhou like to play again? (y/n)");
-                var key = Console.ReadKey().Key;
+                Thread.Sleep(700);
+                Console.WriteLine("Would  you like to play again? (y/n)");
+                key = Console.ReadKey().Key;
 
                 if (key != ConsoleKey.Y)
                 {
@@ -27,12 +42,17 @@
         public double y = 15;
         const double Gravity = 0.18;
         const double JumpHeight = -1.8;
+        bool jumpmode;
+        public Game(bool jumpmode)
+        {
+            this.jumpmode = jumpmode;
+        }
         public void Start()
         {
 
 
             double v = 0;
-            const double a = -Gravity;
+            double a = -Gravity;
 
             void Print()
             {
@@ -43,6 +63,25 @@
             {
                 Console.SetCursorPosition(X, (int)y);
                 Console.Write(" ");
+            }
+            void ProcessPhysics(bool jumpmode, bool pressed)
+            {
+                if (pressed)
+                {
+                    if (jumpmode)
+                    {
+                        v = -JumpHeight;
+
+                    }
+                    else
+                    {
+                        a = -a;
+                        v = 0.8 * v;
+                    }
+                }
+                
+                v += a;
+                y -= v;
             }
             Print();
             Console.ReadKey(true);
@@ -55,14 +94,13 @@
                 Delete();
 
                 bool lost = false;
+                bool pressed = false;
                 if (Console.KeyAvailable)
                 {
                     Console.ReadKey(true);
-                    v = -JumpHeight;
+                    pressed = true;
                 }
-
-                v += a;
-                y -= v;
+                ProcessPhysics(jumpmode, pressed);
 
                 if (y >= Console.WindowHeight || y < 0)
                 {
