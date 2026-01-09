@@ -42,17 +42,17 @@
         public double y = 15;
         const double Gravity = 0.18;
         const double JumpHeight = -1.8;
-        bool jumpmode;
+        bool jumpMode;
         public Game(bool jumpmode)
         {
-            this.jumpmode = jumpmode;
+            this.jumpMode = jumpmode;
         }
         public void Start()
         {
 
 
             double v = 0;
-            double a = -Gravity;
+            double a = jumpMode ? -Gravity : -Gravity*0.8;
 
             void Print()
             {
@@ -76,7 +76,7 @@
                     else
                     {
                         a = -a;
-                        v = 0.8 * v;
+                        v = 0.7 * v;
                     }
                 }
                 
@@ -100,7 +100,7 @@
                     Console.ReadKey(true);
                     pressed = true;
                 }
-                ProcessPhysics(jumpmode, pressed);
+                ProcessPhysics(jumpMode, pressed);
 
                 if (y >= Console.WindowHeight || y < 0)
                 {
