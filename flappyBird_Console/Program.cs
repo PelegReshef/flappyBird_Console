@@ -11,7 +11,7 @@
                 EnterSettings();
                 Console.Clear();
 
-                Game game = new Game(jumpMode);
+                Game game = new Game(jumpMode, easyMode);
                 int score = game.Start();
 
                 Console.WriteLine($"score: {score}");
@@ -58,13 +58,15 @@
     class Game
     {
         public const int X = 15;
-        public double y = 15;
+        public double y = Console.WindowHeight/2;
         const double Gravity = 0.18;
         const double JumpHeight = -1.8;
         bool jumpMode;
-        public Game(bool jumpmode)
+        public bool easy;
+        public Game(bool jumpmode, bool easy)
         {
             this.jumpMode = jumpmode;
+            this.easy = easy;
         }
         public int Start()
         {
@@ -104,7 +106,9 @@
             }
             Print();
             Console.ReadKey(true);
-            Thread.Sleep(1000);
+            Delete();
+            ProcessPhysics(true, true); // a little jump as the start of the game to make it more readable
+
             List<Pipe> pipes = new List<Pipe>();
             int pipeCounter = 20;
             int pipeNumber = 1;
@@ -122,7 +126,7 @@
                 }
                 ProcessPhysics(jumpMode, pressed);
 
-                if (y >= Console.WindowHeight || y < 0)
+                if (y >= (Console.WindowHeight - 1) || y < 0)
                 {
                     lost = true;
                 }
@@ -180,20 +184,21 @@
         int gapTop;
         int gapBottom;
 
-        const int GapSize = 10;
+        int gapSize;
         string icon;
 
         Game game;
 
         public Pipe(int x, Game game, int numForIcon)
         {
+            this.game = game;
+            gapSize = this.game.easy ? 14 : 8;
             this.x = x;
             (int minRange, int maxRange) = GetWindowBorders();
             int gapY = r.Next(minRange, maxRange + 1);
-            gapTop = gapY + GapSize / 2;
-            gapBottom = gapY - GapSize / 2;
+            gapTop = gapY + gapSize / 2;
+            gapBottom = gapY - gapSize / 2;
 
-            this.game = game;
             icon = $"{numForIcon}{numForIcon}{numForIcon}";
 
         }
@@ -202,8 +207,8 @@
             int consoleMax = Console.WindowHeight;
             int consoleMin = 0;
 
-            int min = consoleMin + (int)Math.Ceiling(GapSize / 2.0);
-            int max = consoleMax - (int)Math.Ceiling(GapSize / 2.0);
+            int min = consoleMin + (int)Math.Ceiling(gapSize / 2.0);
+            int max = consoleMax - (int)Math.Ceiling(gapSize / 2.0);
             return (min,  max);
         }
         void Print()
