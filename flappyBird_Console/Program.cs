@@ -2,38 +2,57 @@
 {
     internal class Program
     {
+        static bool jumpMode = true;
+        static bool easyMode = true;
         static void Main(string[] args)
         {
             while (true)
             {
-                bool jumpMode = true;
-                Console.WriteLine("Would  you like to play in jump or swing mode? (j for jump/s (or anything else) for swing)");
-                var key = Console.ReadKey().Key;
-
-                if (key != ConsoleKey.J)
-                {
-                    jumpMode = false;
-                }
-                else
-                {
-                    jumpMode = true;
-                }
+                EnterSettings();
                 Console.Clear();
 
                 Game game = new Game(jumpMode);
-                game.Start();
+                int score = game.Start();
 
-                Thread.Sleep(700);
+                Console.WriteLine($"score: {score}");
                 Console.WriteLine("Would  you like to play again? (y/n)");
-                key = Console.ReadKey().Key;
+                var key = Console.ReadKey().Key;
 
-                if (key != ConsoleKey.Y)
+                if (key == ConsoleKey.N)
                 {
                     return;
                 }
                 Console.Clear();
 
             }
+        }
+        static void EnterSettings()
+        {
+            Console.Clear();
+
+            Console.WriteLine("welcome!");
+            Console.Write($"press M to switch modes. currently: ");
+            Console.WriteLine(jumpMode ? "jump mode" : "swing mode");
+
+            Console.Write($"press D to switch difficulties. currently: ");
+            Console.WriteLine(easyMode ? "easy" : "hard");
+
+            Console.WriteLine("press any other key to play");
+
+            var key = Console.ReadKey(true).Key;
+
+            if (key == ConsoleKey.M)
+            {
+                jumpMode = !jumpMode;
+                EnterSettings();
+            }
+            else if (key == ConsoleKey.D)
+            {
+                easyMode = !easyMode;
+                EnterSettings();
+            }
+            
+            
         }
     }
     class Game
@@ -47,7 +66,7 @@
         {
             this.jumpMode = jumpmode;
         }
-        public void Start()
+        public int Start()
         {
 
 
@@ -88,6 +107,7 @@
             Thread.Sleep(1000);
             List<Pipe> pipes = new List<Pipe>();
             int pipeCounter = 20;
+            int pipeNumber = 1;
             while (true)
             {
                 Thread.Sleep(25);
@@ -127,8 +147,9 @@
 
                 if (pipeCounter == 60)
                 {
-                    pipes.Add(new Pipe(Console.WindowWidth / 2 - 1, this));
+                    pipes.Add(new Pipe(Console.WindowWidth / 2 - 1, this, pipeNumber));
                     pipeCounter = 0;
+                    pipeNumber++;
                 }
                 // check collision
 
@@ -148,23 +169,23 @@
                 }
                 pipeCounter++;
             }
+            return pipeNumber;
         }
 
     }
     class Pipe
     {
-        Random r = new Random();
+        static Random r = new Random();
         public int x;
-        int y;
         int gapTop;
         int gapBottom;
 
-        const int GapSize = 14;
-        const string Icon = "###";
+        const int GapSize = 10;
+        string icon;
 
         Game game;
 
-        public Pipe(int x, Game game)
+        public Pipe(int x, Game game, int numForIcon)
         {
             this.x = x;
             (int minRange, int maxRange) = GetWindowBorders();
@@ -173,6 +194,7 @@
             gapBottom = gapY - GapSize / 2;
 
             this.game = game;
+            icon = $"{numForIcon}{numForIcon}{numForIcon}";
 
         }
         (int, int) GetWindowBorders()
@@ -195,7 +217,7 @@
                 }
                 else
                 {
-                    Console.Write(Icon);
+                    Console.Write(icon);
                 }
 
             }
@@ -205,7 +227,12 @@
             for (int i = 0; i < Console.WindowHeight; i++)
             {
                 Console.SetCursorPosition(x, i);
-                Console.Write("   ");
+                string deleteString = string.Empty;
+                for (int j = 0; j < (icon.Length); j++)
+                {
+                    deleteString += " ";
+                }
+                Console.Write(deleteString);
             }
 
         }
@@ -217,7 +244,7 @@
         }
         public bool GetCollision()
         {
-            if (x == Game.X && (game.y <= (gapBottom + 1) || game.y >= (gapTop - 1)))
+            if ((x <= Game.X && x >= (Game.X - icon.Length + 1)) && (game.y <= (gapBottom + 1) || game.y >= (gapTop - 1)))
             {
                 return true;
             }
