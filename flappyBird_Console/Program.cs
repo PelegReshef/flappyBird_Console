@@ -28,90 +28,69 @@
         }
         static void EnterSettings()
         {
-            Console.Clear();
-
-            Console.WriteLine("welcome!");
-            Console.Write($"press M to switch modes. currently: ");
-            Console.WriteLine(jumpMode ? "jump mode" : "swing mode");
-
-            Console.Write($"press D to switch difficulties. currently: ");
-            Console.WriteLine(easyMode ? "easy" : "hard");
-
-            Console.WriteLine("press any other key to play");
-
-            var key = Console.ReadKey(true).Key;
-
-            if (key == ConsoleKey.M)
+            while (true)
             {
-                jumpMode = !jumpMode;
-                EnterSettings();
+                Console.Clear();
+
+                Console.WriteLine("welcome!");
+                Console.Write($"press M to switch modes. currently: ");
+                Console.WriteLine(jumpMode ? "jump mode" : "swing mode");
+
+                Console.Write($"press D to switch difficulties. currently: ");
+                Console.WriteLine(easyMode ? "easy" : "hard");
+
+                Console.WriteLine("press any other key to play");
+
+                var key = Console.ReadKey(true).Key;
+
+                if (key == ConsoleKey.M)
+                {
+                    jumpMode = !jumpMode;
+                }
+                else if (key == ConsoleKey.D)
+                {
+                    easyMode = !easyMode;
+                }
+                else break;
+
             }
-            else if (key == ConsoleKey.D)
-            {
-                easyMode = !easyMode;
-                EnterSettings();
-            }
-            
-            
+
+
         }
     }
     class Game
     {
-        public const int X = 15;
-        public double y = Console.WindowHeight/2;
-        const double Gravity = 0.18;
-        const double JumpHeight = -1.8;
-        bool jumpMode;
+        public double y = Console.WindowHeight/2; // player location
+        public bool jumpMode;
         public bool easy;
-        public Game(bool jumpmode, bool easy)
+        public Game(bool jumpMode, bool easy)
         {
-            this.jumpMode = jumpmode;
+            this.jumpMode = jumpMode;
             this.easy = easy;
         }
         public int Start()
         {
+            Player pyr = new Player(this);
 
-
-            double v = 0;
-            double a = jumpMode ? -Gravity : -Gravity*0.8;
 
             void Print()
             {
-                Console.SetCursorPosition(X, (int)y);
+                Console.SetCursorPosition(Player.X, (int)y);
                 Console.Write("*");
             }
             void Delete()
             {
-                Console.SetCursorPosition(X, (int)y);
+                Console.SetCursorPosition(Player.X, (int)y);
                 Console.Write(" ");
-            }
-            void ProcessPhysics(bool jumpmode, bool pressed)
-            {
-                if (pressed)
-                {
-                    if (jumpmode)
-                    {
-                        v = -JumpHeight;
-
-                    }
-                    else
-                    {
-                        a = -a;
-                        v = 0.7 * v;
-                    }
-                }
-                
-                v += a;
-                y -= v;
             }
             Print();
             Console.ReadKey(true);
-            Delete();
-            ProcessPhysics(true, true); // a little jump as the start of the game to make it more readable
 
             List<Pipe> pipes = new List<Pipe>();
             int pipeCounter = 20;
             int pipeNumber = 1;
+
+            pyr.StartJump();
             while (true)
             {
                 Thread.Sleep(25);
@@ -124,16 +103,18 @@
                     Console.ReadKey(true);
                     pressed = true;
                 }
-                ProcessPhysics(jumpMode, pressed);
+                y = pyr.GetNewHeight(pressed);
+
 
                 if (y >= (Console.WindowHeight - 1) || y < 0)
                 {
                     lost = true;
                 }
                 Console.SetCursorPosition(0, 0);
-                Console.Write(Math.Round(v, 3).ToString() + " , " + Math.Round(y, 3).ToString());
+                //Console.Write(Math.Round(v, 3).ToString() + " , " + Math.Round(y, 3).ToString());
 
                 Print();
+
                 if (pipeCounter % 1 == 0)
                 {
                     foreach (Pipe p in pipes)
@@ -151,7 +132,7 @@
 
                 if (pipeCounter == 60)
                 {
-                    pipes.Add(new Pipe(Console.WindowWidth / 2 - 1, this, pipeNumber));
+                    pipes.Add(new Pipe((int)(Console.WindowWidth / 1.2 ), this, pipeNumber));
                     pipeCounter = 0;
                     pipeNumber++;
                 }
@@ -177,6 +158,56 @@
         }
 
     }
+    class Player // only physics, no printing.
+    {
+        public const int X = 15;
+        const double Gravity = 0.18;
+        const double JumpHeight = -1.8;
+        bool jumpMode;
+        public bool easy;
+        public double y = Console.WindowHeight / 2;
+        double v = 0;
+        double a;
+        Game game;
+        public Player(Game game)
+        {
+            this.game = game;
+            jumpMode = game.jumpMode;
+            easy = game.easy;
+            a = jumpMode ? -Gravity : -Gravity * 0.8;
+        }
+        public double GetNewHeight(bool pressed)
+        {
+            ProcessPhysics(jumpMode, pressed);
+            return y;
+        }
+        void ProcessPhysics(bool jumpmode, bool pressed)
+        {
+            if (pressed)
+            {
+                if (jumpmode)
+                {
+                    v = -JumpHeight;
+
+                }
+                else
+                {
+                    a = -a;
+                    v = 0.7 * v;
+                }
+            }
+
+            v += a;
+            y -= v;
+        }
+        public void StartJump()
+        {
+            ProcessPhysics(true, true); // a little jump as the start of the game to make it more readable
+
+        }
+
+
+    }
     class Pipe
     {
         static Random r = new Random();
@@ -200,6 +231,7 @@
             gapBottom = gapY - gapSize / 2;
 
             icon = $"{numForIcon}{numForIcon}{numForIcon}";
+            Print();
 
         }
         (int, int) GetWindowBorders()
@@ -216,9 +248,9 @@
             for (int i = 0; i < Console.WindowHeight;  i++)
             {
                 Console.SetCursorPosition(x, i);
-                if (i > gapBottom && i < gapTop)
+                if (i > gapBottom && i < gapTop) // on the gap, which is already empty
                 {
-                    Console.Write("   ");
+                    continue;
                 }
                 else
                 {
@@ -229,27 +261,54 @@
         }
         public void Delete()
         {
+            string deleteString = string.Empty;
+            for (int j = 0; j < (icon.Length); j++)
+            {
+                deleteString += " ";
+            }
             for (int i = 0; i < Console.WindowHeight; i++)
             {
                 Console.SetCursorPosition(x, i);
-                string deleteString = string.Empty;
-                for (int j = 0; j < (icon.Length); j++)
+                Console.SetCursorPosition(x, i);
+                if (i > gapBottom && i < gapTop) // on the gap, which is already empty
                 {
-                    deleteString += " ";
+                    continue;
                 }
-                Console.Write(deleteString);
+                else
+                {
+                    Console.Write(deleteString);
+
+                }
+
             }
 
         }
         public void Move()
         {
-            Delete();
             x--;
-            Print();
+            string updateString = icon;
+            updateString += " ";
+
+            string deleteString = string.Empty;
+            for (int j = 0; j < (icon.Length); j++)
+            {
+                deleteString += " ";
+            }
+            deleteString += " ";
+
+            for (int i = 0; i < Console.WindowHeight; i++)
+            {
+                Console.SetCursorPosition(x, i);
+                if (!(i > gapBottom && i < gapTop)) // is not on the gap
+                {
+                    Console.Write(updateString);
+                }
+
+            }
         }
         public bool GetCollision()
         {
-            if ((x <= Game.X && x >= (Game.X - icon.Length + 1)) && (game.y <= (gapBottom + 1) || game.y >= (gapTop - 1)))
+            if ((x <= Player.X && x >= (Player.X - icon.Length + 1)) && (game.y <= (gapBottom + 1) || game.y >= (gapTop - 1)))
             {
                 return true;
             }
