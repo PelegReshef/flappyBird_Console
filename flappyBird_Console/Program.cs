@@ -2,10 +2,13 @@
 {
     internal class Program
     {
+        public static Random r = new Random();
+
         static bool jumpMode = true;
         static bool easyMode = true;
         static void Main(string[] args)
         {
+            //Console.CursorVisible = false;
             while (true)
             {
                 EnterSettings();
@@ -83,18 +86,20 @@
                 Console.SetCursorPosition(Player.X, (int)y);
                 Console.Write(" ");
             }
+
             Print();
             Console.ReadKey(true);
 
             List<Pipe> pipes = new List<Pipe>();
-            int pipeCounter = 20;
-            int pipeNumber = 1;
+            List<GPortal> gPortals = new List<GPortal>();
+            int gPortalCounter = 0; // used to spawn grvity portals
+            int pipeCounter = 20; // used to spawn pipes
+            int pipeAmount = 1; // used for score
 
             pyr.StartJump();
             while (true)
             {
                 Thread.Sleep(25);
-                Delete();
 
                 bool lost = false;
                 bool pressed = false;
@@ -103,41 +108,59 @@
                     Console.ReadKey(true);
                     pressed = true;
                 }
+                Delete();
+
                 y = pyr.GetNewHeight(pressed);
+                
 
 
                 if (y >= (Console.WindowHeight - 1) || y < 0)
                 {
                     lost = true;
+                    goto loss;
                 }
-                Console.SetCursorPosition(0, 0);
+                //Console.SetCursorPosition(0, 0);
                 //Console.Write(Math.Round(v, 3).ToString() + " , " + Math.Round(y, 3).ToString());
 
                 Print();
 
-                if (pipeCounter % 1 == 0)
+                foreach (Pipe p in pipes)
                 {
-                    foreach (Pipe p in pipes)
+                    if (p.x <= 1)
                     {
-                        if (p.x <= 1)
-                        {
-                            p.Delete();
-                            continue;
-                        }
-                        p.Move();
+                        p.Delete();
+                        continue;
                     }
-
+                    p.Move();
                 }
+                foreach (GPortal gp in gPortals)
+                {
+                    if (gp.x <= 1)
+                    {
+                        gp.Delete();
+                        continue;
+                    }
+                    gp.Move();
+                }
+
+
+                
                 pipes.RemoveAll(pipe => pipe.x <= 0);
+                gPortals.RemoveAll(gp => gp.x <= 0);
 
                 if (pipeCounter == 60)
                 {
-                    pipes.Add(new Pipe((int)(Console.WindowWidth / 1.2 ), this, pipeNumber));
+                    pipes.Add(new Pipe((int)(Console.WindowWidth / 1.2 ), this, pipeAmount));
                     pipeCounter = 0;
-                    pipeNumber++;
+                    pipeAmount++;
                 }
-                // check collision
+                if (((Program.r.Next(0, 1001) > 994) && (gPortalCounter > 20))|| gPortalCounter == 301)
+                {
+                    gPortals.Add(new GPortal((int)(Console.WindowWidth / 1.2 )));
+                    gPortalCounter = 0;
+                }
 
+                // check collision with pipes
                 foreach (Pipe p in pipes)
                 {
                     if (p.GetCollision())
@@ -146,6 +169,17 @@
                         break;
                     }
                 }
+
+                //check collison with gravity portals
+                foreach(GPortal gp in gPortals)
+                {
+                    if (gp.GetCollision())
+                    {
+                        pyr.ReverseGravity();
+                        break;
+                    }
+                }
+                loss:
                 if (lost)
                 {
                     Console.Clear();
@@ -153,8 +187,9 @@
                     break;
                 }
                 pipeCounter++;
+                gPortalCounter++;
             }
-            return pipeNumber;
+            return pipeAmount;
         }
 
     }
@@ -187,7 +222,8 @@
             {
                 if (jumpmode)
                 {
-                    v = -JumpHeight;
+                    double gh = JumpHeight * (a / Math.Abs(a)); // calculation to make the jump height work for both normal and flipped gravity
+                    v = gh;
 
                 }
                 else
@@ -205,12 +241,63 @@
             ProcessPhysics(true, true); // a little jump as the start of the game to make it more readable
 
         }
+        public void ReverseGravity()
+        {
+            // flip acceleration
+            a *= -1;
+        }
 
+
+    }
+    class GPortal //gravity portal
+    {
+        public int x;
+        string icon = "-";
+
+        public GPortal(int x)
+        {
+            this.x = x;
+        }
+        public void Print()
+        {
+            for (int i = 0; i < Console.WindowHeight; i++)
+            {
+                Console.SetCursorPosition(x, i);
+                Console.Write(icon);
+
+            }
+        }
+        public void Move()
+        {
+            x--;
+            for (int i = 0; i < Console.WindowHeight; i++)
+            {
+                Console.SetCursorPosition(x, i);
+                Console.Write(icon + ' ');
+
+            }
+        }
+        public void Delete()
+        {
+            for (int i = 0; i < Console.WindowHeight; i++)
+            {
+                Console.SetCursorPosition(x, i);
+                Console.Write(" ");
+
+            }
+        }
+        public bool GetCollision()
+        {
+            if (x <= Player.X && x >= (Player.X - icon.Length + 1))
+            {
+                return true;
+            }
+            return false;
+        }
 
     }
     class Pipe
     {
-        static Random r = new Random();
         public int x;
         int gapTop;
         int gapBottom;
@@ -226,11 +313,11 @@
             gapSize = this.game.easy ? 14 : 8;
             this.x = x;
             (int minRange, int maxRange) = GetWindowBorders();
-            int gapY = r.Next(minRange, maxRange + 1);
+            int gapY = Program.r.Next(minRange, maxRange + 1);
             gapTop = gapY + gapSize / 2;
             gapBottom = gapY - gapSize / 2;
 
-            icon = $"{numForIcon}{numForIcon}{numForIcon}";
+            icon = $"###";
             Print();
 
         }
@@ -308,7 +395,7 @@
         }
         public bool GetCollision()
         {
-            if ((x <= Player.X && x >= (Player.X - icon.Length + 1)) && (game.y <= (gapBottom + 1) || game.y >= (gapTop - 1)))
+            if ((x <= Player.X && x >= (Player.X - icon.Length + 1)) && (game.y <= (gapBottom + 1) || game.y >= (gapTop)))
             {
                 return true;
             }
