@@ -1,4 +1,6 @@
-﻿namespace flappyBird_Console
+﻿using System.Drawing;
+
+namespace flappyBird_Console
 {
     internal class Program
     {
@@ -59,6 +61,39 @@
             }
 
 
+        }
+    }
+    static class Buffer
+    {
+        static char[,] buffer = new char[Console.WindowWidth, Console.WindowHeight];
+        static Point cursor = new Point(0, 0);
+        public static void SetCursorPosition(int x, int y)
+        {
+            cursor = new Point(x, y);
+        }
+        public static void Write(string line)
+        {
+            for (int i = 0; i < line.Length; i++)
+            {
+                buffer[i, cursor.Y] = line[i];
+            }
+        }
+        public static void Clear()
+        {
+            buffer = new char[Console.WindowWidth, Console.WindowHeight];
+        }
+        public static void Print()
+        {
+            for (int y = 0; y< Console.WindowHeight; y++)
+            {
+                char[] line = new char[Console.WindowWidth];
+                for (int x = 0; x < Console.WindowWidth; x++)
+                {
+                    line[x] = buffer[x, y];
+                }
+                Console.SetCursorPosition(0, y);
+                Console.Write(line);
+            }
         }
     }
     class Game
