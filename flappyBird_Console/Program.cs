@@ -1,4 +1,5 @@
 ﻿using System.Drawing;
+using System.Text;
 
 namespace flappyBird_Console
 {
@@ -10,7 +11,8 @@ namespace flappyBird_Console
         static bool easyMode = true;
         static void Main(string[] args)
         {
-            //Console.CursorVisible = false;
+            Console.CursorVisible = false;
+            Console.OutputEncoding = Encoding.ASCII;
             while (true)
             {
                 EnterSettings();
@@ -36,6 +38,7 @@ namespace flappyBird_Console
             while (true)
             {
                 Console.Clear();
+
 
                 Console.WriteLine("welcome!");
                 Console.Write($"press M to switch modes. currently: ");
@@ -81,18 +84,26 @@ namespace flappyBird_Console
         }
         public static void Clear()
         {
-            buffer = new char[Console.WindowWidth, Console.WindowHeight];
+            for (int y = 0; y < Console.WindowHeight; y++)
+            {
+                for (int x = 0; x < Console.WindowWidth; x++)
+                {
+                    buffer[x, y] = ' ';
+                }
+            }
+
+
         }
         public static void Print()
         {
+            char[] line = new char[Console.WindowWidth];
+            Console.SetCursorPosition(0, 0);
             for (int y = 0; y< Console.WindowHeight; y++)
             {
-                char[] line = new char[Console.WindowWidth];
                 for (int x = 0; x < Console.WindowWidth; x++)
                 {
                     line[x] = buffer[x, y];
                 }
-                Console.SetCursorPosition(0, y);
                 Console.Write(line);
             }
         }
@@ -110,17 +121,18 @@ namespace flappyBird_Console
         public int Start()
         {
             Player pyr = new Player(this);
+            Buffer.Clear();
 
 
             void Print()
             {
-                Console.SetCursorPosition(Player.X, (int)y);
-                Console.Write("*");
+                Buffer.SetCursorPosition(Player.X, (int)y);
+                Buffer.Write("*");
             }
             void Delete()
             {
-                Console.SetCursorPosition(Player.X, (int)y);
-                Console.Write(" ");
+                Buffer.SetCursorPosition(Player.X, (int)y);
+                Buffer.Write(" ");
             }
 
             Print();
@@ -135,7 +147,9 @@ namespace flappyBird_Console
             pyr.StartJump();
             while (true)
             {
+                Buffer.Print();
                 Thread.Sleep(25);
+                Buffer.Clear();
 
                 bool lost = false;
                 bool pressed = false;
@@ -298,8 +312,8 @@ namespace flappyBird_Console
         {
             for (int i = 0; i < Console.WindowHeight; i++)
             {
-                Console.SetCursorPosition(x, i);
-                Console.Write(icon);
+                Buffer.SetCursorPosition(x, i);
+                Buffer.Write(icon);
 
             }
         }
@@ -308,8 +322,8 @@ namespace flappyBird_Console
             x--;
             for (int i = 0; i < Console.WindowHeight; i++)
             {
-                Console.SetCursorPosition(x, i);
-                Console.Write(icon + ' ');
+                Buffer.SetCursorPosition(x, i);
+                Buffer.Write(icon + ' ');
 
             }
         }
@@ -317,8 +331,8 @@ namespace flappyBird_Console
         {
             for (int i = 0; i < Console.WindowHeight; i++)
             {
-                Console.SetCursorPosition(x, i);
-                Console.Write(" ");
+                Buffer.SetCursorPosition(x, i);
+                Buffer.Write(" ");
 
             }
         }
@@ -370,14 +384,14 @@ namespace flappyBird_Console
         {
             for (int i = 0; i < Console.WindowHeight;  i++)
             {
-                Console.SetCursorPosition(x, i);
+                Buffer.SetCursorPosition(x, i);
                 if (i > gapBottom && i < gapTop) // on the gap, which is already empty
                 {
                     continue;
                 }
                 else
                 {
-                    Console.Write(icon);
+                    Buffer.Write(icon);
                 }
 
             }
@@ -391,15 +405,15 @@ namespace flappyBird_Console
             }
             for (int i = 0; i < Console.WindowHeight; i++)
             {
-                Console.SetCursorPosition(x, i);
-                Console.SetCursorPosition(x, i);
+                Buffer.SetCursorPosition(x, i);
+                Buffer.SetCursorPosition(x, i);
                 if (i > gapBottom && i < gapTop) // on the gap, which is already empty
                 {
                     continue;
                 }
                 else
                 {
-                    Console.Write(deleteString);
+                    Buffer.Write(deleteString);
 
                 }
 
@@ -421,10 +435,10 @@ namespace flappyBird_Console
 
             for (int i = 0; i < Console.WindowHeight; i++)
             {
-                Console.SetCursorPosition(x, i);
+                Buffer.SetCursorPosition(x, i);
                 if (!(i > gapBottom && i < gapTop)) // is not on the gap
                 {
-                    Console.Write(updateString);
+                    Buffer.Write(updateString);
                 }
 
             }
