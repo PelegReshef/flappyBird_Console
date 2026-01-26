@@ -75,7 +75,7 @@ namespace flappyBird_Console
         {
             for (int i = 0; i < line.Length; i++)
             {
-                buffer[cursor.X, cursor.Y] = line[i];
+                buffer[cursor.X + i, cursor.Y] = line[i];
             }
             cursor.X += line.Length;
         }
