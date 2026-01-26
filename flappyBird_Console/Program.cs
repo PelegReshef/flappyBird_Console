@@ -1,5 +1,6 @@
 ﻿using System.Drawing;
 using System.Text;
+using System.Diagnostics;
 
 namespace flappyBird_Console
 {
@@ -69,6 +70,7 @@ namespace flappyBird_Console
     static class Buffer
     {
         static char[,] buffer = new char[Console.WindowWidth, Console.WindowHeight];
+        static HashSet<int> changes = new HashSet<int>();
         static Point cursor = new Point(0, 0);
         public static void SetCursorPosition(int x, int y)
         {
@@ -81,6 +83,7 @@ namespace flappyBird_Console
                 buffer[cursor.X + i, cursor.Y] = line[i];
             }
             cursor.X += line.Length;
+            changes.Add(cursor.Y);
         }
         public static void Clear()
         {
@@ -91,7 +94,7 @@ namespace flappyBird_Console
                     buffer[x, y] = ' ';
                 }
             }
-
+            changes.Clear();
 
         }
         public static void Print()
@@ -100,12 +103,19 @@ namespace flappyBird_Console
             Console.SetCursorPosition(0, 0);
             for (int y = 0; y< Console.WindowHeight; y++)
             {
+                if (!changes.Contains(y))
+                {
+                    continue;
+                }
                 for (int x = 0; x < Console.WindowWidth; x++)
                 {
                     line[x] = buffer[x, y];
                 }
+                Console.SetCursorPosition(0, y);
+
                 Console.Write(line);
             }
+            changes.Clear();
         }
     }
     class Game
@@ -122,6 +132,8 @@ namespace flappyBird_Console
         {
             Player pyr = new Player(this);
             Buffer.Clear();
+            var stopwatch = Stopwatch.StartNew();
+            double lastTime = stopwatch.Elapsed.TotalSeconds;
 
 
             void Print()
@@ -141,15 +153,17 @@ namespace flappyBird_Console
             List<Pipe> pipes = new List<Pipe>();
             List<GPortal> gPortals = new List<GPortal>();
             int gPortalCounter = 0; // used to spawn grvity portals
-            int pipeCounter = 20; // used to spawn pipes
+            int pipeCounter = 580; // used to spawn pipes
             int pipeAmount = 1; // used for score
 
             pyr.StartJump();
             while (true)
             {
-                Buffer.Print();
-                Thread.Sleep(25);
-                Buffer.Clear();
+                double now = stopwatch.Elapsed.TotalSeconds;
+                double dt = now - lastTime;
+                dt = Math.Min(dt, 0.05);
+                lastTime = now;
+
 
                 bool lost = false;
                 bool pressed = false;
@@ -160,11 +174,11 @@ namespace flappyBird_Console
                 }
                 Delete();
 
-                y = pyr.GetNewHeight(pressed);
+                y = pyr.GetNewHeight(pressed, dt);
                 
 
 
-                if (y >= (Console.WindowHeight - 1) || y < 0)
+                if (y >= (Console.WindowHeight) || y < 0)
                 {
                     lost = true;
                     goto loss;
@@ -173,38 +187,41 @@ namespace flappyBird_Console
                 //Console.Write(Math.Round(v, 3).ToString() + " , " + Math.Round(y, 3).ToString());
 
                 Print();
-
-                foreach (Pipe p in pipes)
+                if (pipeCounter % 6 == 0)
                 {
-                    if (p.x <= 1)
+                    foreach (Pipe p in pipes)
                     {
-                        p.Delete();
-                        continue;
+                        if (p.x <= 1)
+                        {
+                            p.Delete();
+                            continue;
+                        }
+                        p.Move();
                     }
-                    p.Move();
-                }
-                foreach (GPortal gp in gPortals)
-                {
-                    if (gp.x <= 1)
+                    foreach (GPortal gp in gPortals)
                     {
-                        gp.Delete();
-                        continue;
+                        if (gp.x <= 1)
+                        {
+                            gp.Delete();
+                            continue;
+                        }
+                        gp.Move();
                     }
-                    gp.Move();
+
                 }
 
 
-                
+
                 pipes.RemoveAll(pipe => pipe.x <= 0);
                 gPortals.RemoveAll(gp => gp.x <= 0);
 
-                if (pipeCounter == 60)
+                if (pipeCounter == 600)
                 {
                     pipes.Add(new Pipe((int)(Console.WindowWidth / 1.2 ), this, pipeAmount));
                     pipeCounter = 0;
                     pipeAmount++;
                 }
-                if (((Program.r.Next(0, 1001) > 994) && (gPortalCounter > 20))|| gPortalCounter == 301)
+                if (((Program.r.Next(0, 1001) > 999) && (gPortalCounter > 20))|| gPortalCounter == 1200)
                 {
                     gPortals.Add(new GPortal((int)(Console.WindowWidth / 1.2 )));
                     gPortalCounter = 0;
@@ -236,8 +253,13 @@ namespace flappyBird_Console
                     Console.WriteLine("You lost!!!");
                     break;
                 }
+                Buffer.Print();
+                Thread.Sleep(1);
+
                 pipeCounter++;
                 gPortalCounter++;
+
+
             }
             return pipeAmount;
         }
@@ -246,8 +268,8 @@ namespace flappyBird_Console
     class Player // only physics, no printing.
     {
         public const int X = 15;
-        const double Gravity = 0.18;
-        const double JumpHeight = -1.8;
+        const double Gravity = 0.6;
+        const double JumpHeight = -24;
         bool jumpMode;
         public bool easy;
         public double y = Console.WindowHeight / 2;
@@ -259,14 +281,14 @@ namespace flappyBird_Console
             this.game = game;
             jumpMode = game.jumpMode;
             easy = game.easy;
-            a = jumpMode ? -Gravity : -Gravity * 0.8;
+            a = jumpMode ? -Gravity : -Gravity * 0.7;
         }
-        public double GetNewHeight(bool pressed)
+        public double GetNewHeight(bool pressed, double dt)
         {
-            ProcessPhysics(jumpMode, pressed);
+            ProcessPhysics(jumpMode, pressed, dt);
             return y;
         }
-        void ProcessPhysics(bool jumpmode, bool pressed)
+        void ProcessPhysics(bool jumpmode, bool pressed, double dt)
         {
             if (pressed)
             {
@@ -284,11 +306,11 @@ namespace flappyBird_Console
             }
 
             v += a;
-            y -= v;
+            y -= v * dt;
         }
         public void StartJump()
         {
-            ProcessPhysics(true, true); // a little jump as the start of the game to make it more readable
+            ProcessPhysics(true, true, 0.025); // a little jump as the start of the game to make it more readable
 
         }
         public void ReverseGravity()
