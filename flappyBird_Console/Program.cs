@@ -152,7 +152,7 @@ namespace flappyBird_Console
 
             List<Pipe> pipes = new List<Pipe>();
             List<GPortal> gPortals = new List<GPortal>();
-            int gPortalCounter = 0; // used to spawn grvity portals
+            int gPortalCounter = 0; // used to spawn grvity portals 
             int pipeCounter = 580; // used to spawn pipes
             int pipeAmount = 1; // used for score
 
