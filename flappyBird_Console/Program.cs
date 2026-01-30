@@ -221,7 +221,7 @@ namespace flappyBird_Console
                     pipeCounter = 0;
                     pipeAmount++;
                 }
-                if (((Program.r.Next(0, 1001) > 999) && (gPortalCounter > 20))|| gPortalCounter == 1200)
+                if (((Program.r.Next(0, 1001) > 998) && (gPortalCounter > 20))|| gPortalCounter == 1200)
                 {
                     gPortals.Add(new GPortal((int)(Console.WindowWidth / 1.2 )));
                     gPortalCounter = 0;
@@ -325,6 +325,7 @@ namespace flappyBird_Console
     {
         public int x;
         string icon = "-";
+        bool used = false;
 
         public GPortal(int x)
         {
@@ -360,8 +361,9 @@ namespace flappyBird_Console
         }
         public bool GetCollision()
         {
-            if (x <= Player.X && x >= (Player.X - icon.Length + 1))
+            if ((x <= Player.X && x >= (Player.X - icon.Length + 1)) && !used)
             {
+                used = true;
                 return true;
             }
             return false;
