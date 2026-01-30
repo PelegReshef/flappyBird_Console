@@ -153,7 +153,7 @@ namespace flappyBird_Console
             List<Pipe> pipes = new List<Pipe>();
             List<GPortal> gPortals = new List<GPortal>();
             int gPortalCounter = 0; // used to spawn grvity portals 
-            int pipeCounter = 580; // used to spawn pipes
+            int pipeCounter = 150; // used to spawn pipes
             int pipeAmount = 1; // used for score
 
             pyr.StartJump();
@@ -187,7 +187,7 @@ namespace flappyBird_Console
                 //Console.Write(Math.Round(v, 3).ToString() + " , " + Math.Round(y, 3).ToString());
 
                 Print();
-                if (pipeCounter % 6 == 0)
+                if (pipeCounter % 3 == 0)
                 {
                     foreach (Pipe p in pipes)
                     {
@@ -215,13 +215,13 @@ namespace flappyBird_Console
                 pipes.RemoveAll(pipe => pipe.x <= 0);
                 gPortals.RemoveAll(gp => gp.x <= 0);
 
-                if (pipeCounter == 600)
+                if (pipeCounter == 180)
                 {
                     pipes.Add(new Pipe((int)(Console.WindowWidth / 1.2 ), this, pipeAmount));
                     pipeCounter = 0;
                     pipeAmount++;
                 }
-                if (((Program.r.Next(0, 1001) > 998) && (gPortalCounter > 20))|| gPortalCounter == 1200)
+                if (((Program.r.Next(0, 1001) > 998) && (gPortalCounter > 20))|| gPortalCounter == 500)
                 {
                     gPortals.Add(new GPortal((int)(Console.WindowWidth / 1.2 )));
                     gPortalCounter = 0;
@@ -268,8 +268,8 @@ namespace flappyBird_Console
     class Player // only physics, no printing.
     {
         public const int X = 15;
-        const double Gravity = 0.6;
-        const double JumpHeight = -24;
+        const double Gravity = 0.67;
+        const double JumpHeight = -20;
         bool jumpMode;
         public bool easy;
         public double y = Console.WindowHeight / 2;
